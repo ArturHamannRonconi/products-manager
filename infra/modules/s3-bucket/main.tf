@@ -37,7 +37,7 @@ resource "aws_s3_bucket_policy" "public_read" {
     }]
   })
 
-  depends_on = [aws_s3_bucket_public_access_block.this]
+  depends_on = [aws_s3_bucket_public_access_block.this, aws_s3_bucket_ownership_controls.this]
 }
 
 resource "aws_s3_bucket_policy" "vpc_only" {
