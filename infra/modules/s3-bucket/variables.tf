@@ -55,6 +55,12 @@ variable "route_table_ids" {
   default     = []
 }
 
+variable "terraform_executor_arns" {
+  description = "List of IAM ARNs (users/roles) that are exempt from the VPC endpoint restriction (e.g. CI/CD pipeline role)"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Additional tags for the bucket"
   type        = map(string)

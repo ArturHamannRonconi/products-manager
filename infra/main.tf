@@ -53,6 +53,8 @@ module "uploads_bucket" {
   create_vpc_endpoint      = true
   vpc_id                   = module.networking.vpc_id
   route_table_ids          = [module.networking.private_route_table_id]
+
+  terraform_executor_arns = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/arturhr"]
 }
 
 
