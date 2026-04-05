@@ -24,7 +24,13 @@ describe('GetProductsForSellersController', () => {
       providers: [{ provide: GetProductsForSellersService, useValue: mockService }],
     })
       .overrideGuard(SellerJwtGuard)
-      .useValue({ canActivate: () => true })
+      .useValue({
+        canActivate: (context: any) => {
+          const req = context.switchToHttp().getRequest();
+          req.user = { sellerId: 'test-seller-id' };
+          return true;
+        },
+      })
       .compile();
 
     app = module.createNestApplication();

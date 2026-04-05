@@ -4,6 +4,7 @@ import { ProductRepository } from '../../repositories/products/product-repositor
 function makeProductRepo(overrides: Partial<ProductRepository> = {}): ProductRepository {
   return {
     findById: jest.fn().mockResolvedValue(null),
+    findIdsBySellerId: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
     findForSellers: jest.fn().mockResolvedValue({ products: [], total: 0 }),
@@ -16,6 +17,7 @@ function makeProductRepo(overrides: Partial<ProductRepository> = {}): ProductRep
 const mockCustomerProduct = {
   id: 'p1', name: 'Product', image_url: null,
   description: 'Desc', price: 10, category: 'Electronics', seller_name: 'Seller',
+  seller_id: 's1',
 };
 
 describe('GetProductsForCustomersService', () => {
@@ -25,7 +27,7 @@ describe('GetProductsForCustomersService', () => {
     });
     const service = new GetProductsForCustomersService(productRepo);
 
-    const result = await service.execute({ page: 1, size: 10 });
+    const result = await service.execute({ page: 1, size: 10, sortBy: 'name', order: 'asc' });
 
     expect(result.isSuccess).toBe(true);
     const output = result.result as any;
@@ -38,7 +40,7 @@ describe('GetProductsForCustomersService', () => {
     const productRepo = makeProductRepo();
     const service = new GetProductsForCustomersService(productRepo);
 
-    const result = await service.execute({ page: 1, size: 10 });
+    const result = await service.execute({ page: 1, size: 10, sortBy: 'name', order: 'asc' });
 
     expect(result.isSuccess).toBe(true);
     const output = result.result as any;
@@ -51,7 +53,7 @@ describe('GetProductsForCustomersService', () => {
     });
     const service = new GetProductsForCustomersService(productRepo);
 
-    const result = await service.execute({ page: 999, size: 10 });
+    const result = await service.execute({ page: 999, size: 10, sortBy: 'name', order: 'asc' });
 
     expect(result.isSuccess).toBe(true);
   });

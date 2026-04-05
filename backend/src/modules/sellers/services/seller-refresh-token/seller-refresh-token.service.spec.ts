@@ -1,48 +1,44 @@
 import { JwtService } from '@nestjs/jwt';
 import { SellerRefreshTokenService } from './seller-refresh-token.service';
 import { SellerRepository } from '../../repositories/sellers/seller-repository.interface';
-import { SellerAggregate } from '../../domain/seller.aggregate-root';
-import { DateValueObject, IdValueObject } from 'ddd-tool-kit';
-import { NameValueObject } from '../../domain/value-objects/name/name.value-object';
-import { EmailValueObject } from '../../domain/value-objects/email/email.value-object';
-import { OrganizationNameValueObject } from '../../domain/value-objects/organization-name/organization-name.value-object';
-import { PasswordValueObject } from '../../../../shared/value-objects/password/password.value-object';
-import { RefreshTokenEntity } from '../../domain/entities/refresh-token/refresh-token.entity';
+import { IdValueObject } from 'ddd-tool-kit';
 import * as bcryptjs from 'bcryptjs';
 
-function buildSellerWithToken() {
-  const expiresAt = DateValueObject.getDefault();
-  expiresAt.addDays(30);
+function makeExpiredAt(daysFromNow: number) {
+  const now = new Date();
+  now.setDate(now.getDate() + daysFromNow);
+  return { value: now };
+}
 
-  const rawTokenId = IdValueObject.getDefault();
-  const tokenHash = bcryptjs.hashSync(rawTokenId.value, bcryptjs.genSaltSync());
+function buildMockSellerWithToken(expired = false) {
+  const rawTokenId = IdValueObject.getDefault().value;
+  const tokenHash = bcryptjs.hashSync(rawTokenId, bcryptjs.genSaltSync());
 
-  const token = RefreshTokenEntity.init({
-    id: IdValueObject.init({ value: tokenHash }).result as IdValueObject,
-    expiresAt,
-    createdAt: DateValueObject.getDefault(),
-    updatedAt: DateValueObject.getDefault(),
-  }).result as RefreshTokenEntity;
+  const mockToken = {
+    id: { value: tokenHash },
+    expiresAt: makeExpiredAt(expired ? -1 : 30),
+    get secondsUntilExpiration() {
+      const diff = Math.floor((this.expiresAt.value.getTime() - Date.now()) / 1000);
+      return Math.max(diff, 0);
+    },
+    renew: jest.fn(function (this: any) {
+      this.id = { value: IdValueObject.getDefault().value };
+    }),
+  };
 
-  const seller = SellerAggregate.init({
-    id: IdValueObject.getDefault(),
-    createdAt: DateValueObject.getDefault(),
-    updatedAt: DateValueObject.getDefault(),
-    name: NameValueObject.init({ value: 'John' }).result as NameValueObject,
-    email: EmailValueObject.init({ value: 'john@example.com' }).result as EmailValueObject,
-    password: PasswordValueObject.init({ value: 'password123' }).result as PasswordValueObject,
-    organizationName: OrganizationNameValueObject.init({ value: 'Acme' }).result as OrganizationNameValueObject,
-    refreshTokens: [token],
-  }).result as SellerAggregate;
+  const mockSeller = {
+    id: { value: IdValueObject.getDefault().value },
+    refreshTokens: [mockToken],
+  };
 
-  return { seller, rawTokenId: rawTokenId.value, tokenHash };
+  return { seller: mockSeller as any, rawTokenId };
 }
 
 const mockJwt = { sign: jest.fn().mockReturnValue('new.jwt.token') } as unknown as JwtService;
 
 describe('SellerRefreshTokenService', () => {
   it('should refresh successfully', async () => {
-    const { seller, rawTokenId } = buildSellerWithToken();
+    const { seller, rawTokenId } = buildMockSellerWithToken();
     const repo: SellerRepository = {
       findById: jest.fn().mockResolvedValue(null),
       findByEmail: jest.fn().mockResolvedValue(null),
@@ -71,30 +67,7 @@ describe('SellerRefreshTokenService', () => {
   });
 
   it('should fail when token is expired', async () => {
-    const expiredAt = DateValueObject.getDefault();
-    expiredAt.addDays(-1);
-
-    const rawTokenId = IdValueObject.getDefault();
-    const tokenHash = bcryptjs.hashSync(rawTokenId.value, bcryptjs.genSaltSync());
-
-    const token = RefreshTokenEntity.init({
-      id: IdValueObject.init({ value: tokenHash }).result as IdValueObject,
-      expiresAt: expiredAt,
-      createdAt: DateValueObject.getDefault(),
-      updatedAt: DateValueObject.getDefault(),
-    }).result as RefreshTokenEntity;
-
-    const seller = SellerAggregate.init({
-      id: IdValueObject.getDefault(),
-      createdAt: DateValueObject.getDefault(),
-      updatedAt: DateValueObject.getDefault(),
-      name: NameValueObject.init({ value: 'John' }).result as NameValueObject,
-      email: EmailValueObject.init({ value: 'john@example.com' }).result as EmailValueObject,
-      password: PasswordValueObject.init({ value: 'password123' }).result as PasswordValueObject,
-      organizationName: OrganizationNameValueObject.init({ value: 'Acme' }).result as OrganizationNameValueObject,
-      refreshTokens: [token],
-    }).result as SellerAggregate;
-
+    const { seller, rawTokenId } = buildMockSellerWithToken(true);
     const repo: SellerRepository = {
       findById: jest.fn().mockResolvedValue(null),
       findByEmail: jest.fn().mockResolvedValue(null),
@@ -103,7 +76,7 @@ describe('SellerRefreshTokenService', () => {
     };
     const service = new SellerRefreshTokenService(repo, mockJwt);
 
-    const result = await service.execute({ refreshToken: rawTokenId.value });
+    const result = await service.execute({ refreshToken: rawTokenId });
     expect(result.isFailure).toBe(true);
   });
 });

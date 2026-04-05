@@ -1,4 +1,5 @@
 import { DateValueObject, IdValueObject } from 'ddd-tool-kit';
+import * as bcryptjs from 'bcryptjs';
 import { CustomerAggregate } from './customer.aggregate-root';
 import { NameValueObject } from './value-objects/name/name.value-object';
 import { EmailValueObject } from './value-objects/email/email.value-object';
@@ -74,8 +75,13 @@ describe('CustomerAggregate', () => {
     const rawId = token.id.value;
     customer.addRefreshToken(token);
     expect(customer.refreshTokens).toHaveLength(1);
+
+    // bcryptjs.compareSync(rawId, token.id.value) must return true to trigger removal
+    jest.spyOn(bcryptjs, 'compareSync').mockReturnValueOnce(true);
     customer.removeRefreshToken(rawId);
+
     expect(customer.refreshTokens).toHaveLength(0);
+    jest.restoreAllMocks();
   });
 
   it('should validatePassword correctly', () => {

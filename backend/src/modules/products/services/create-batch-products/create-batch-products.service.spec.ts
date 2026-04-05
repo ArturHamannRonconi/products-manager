@@ -8,6 +8,7 @@ import { DateValueObject, IdValueObject } from 'ddd-tool-kit';
 function makeProductRepo(overrides: Partial<ProductRepository> = {}): ProductRepository {
   return {
     findById: jest.fn().mockResolvedValue(null),
+    findIdsBySellerId: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
     findForSellers: jest.fn().mockResolvedValue({ products: [], total: 0 }),

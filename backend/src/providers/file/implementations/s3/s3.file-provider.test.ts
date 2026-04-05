@@ -1,14 +1,22 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import { S3FileProvider } from './s3.file-provider';
 
+jest.mock('@aws-sdk/client-s3', () => ({
+  S3Client: jest.fn(),
+  PutObjectCommand: jest.fn().mockImplementation((params) => params),
+  DeleteObjectCommand: jest.fn().mockImplementation((params) => params),
+}));
+
+const MockedS3Client = S3Client as jest.MockedClass<typeof S3Client>;
+
 describe('S3FileProvider', () => {
   let provider: S3FileProvider;
   let mockSend: jest.Mock;
 
   beforeEach(() => {
     mockSend = jest.fn().mockResolvedValue({});
-    const s3Client = { send: mockSend } as unknown as S3Client;
-    provider = new S3FileProvider(s3Client, 'my-bucket', 'us-east-1');
+    MockedS3Client.mockImplementation(() => ({ send: mockSend }) as any);
+    provider = new S3FileProvider('my-bucket');
   });
 
   it('should upload a file and return the correct URL', async () => {

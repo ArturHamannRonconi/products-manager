@@ -13,6 +13,10 @@ import { PriceValueObject } from '../../../../domain/value-objects/price/price.v
 import { ImageUrlValueObject } from '../../../../domain/value-objects/image-url/image-url.value-object';
 import { InventoryAmountValueObject } from '../../../../domain/value-objects/inventory-amount/inventory-amount.value-object';
 
+const DEFAULT_SELLER_ID = 'seller1234567890';  // exactly 16 chars
+const CATEGORY_A_ID     = 'catAAAAAAAAAAAAA';  // exactly 16 chars
+const CATEGORY_B_ID     = 'catBBBBBBBBBBBBB';  // exactly 16 chars
+
 function buildProduct(name = 'Test Product', categoryId?: string, sellerId?: string): ProductAggregate {
   return ProductAggregate.init({
     id: IdValueObject.getDefault(),
@@ -22,8 +26,8 @@ function buildProduct(name = 'Test Product', categoryId?: string, sellerId?: str
     description: ProductDescriptionValueObject.init({ value: 'A test description.' }).result as ProductDescriptionValueObject,
     price: PriceValueObject.init({ value: 9.99 }).result as PriceValueObject,
     imageUrl: ImageUrlValueObject.init({ value: null }).result as ImageUrlValueObject,
-    sellerId: IdValueObject.init({ value: sellerId ?? 'seller-1' }).result as IdValueObject,
-    categoryId: IdValueObject.init({ value: categoryId ?? 'category-1' }).result as IdValueObject,
+    sellerId: IdValueObject.init({ value: sellerId ?? DEFAULT_SELLER_ID }).result as IdValueObject,
+    categoryId: IdValueObject.init({ value: categoryId ?? CATEGORY_A_ID }).result as IdValueObject,
     inventoryAmount: InventoryAmountValueObject.init({ value: 10 }).result as InventoryAmountValueObject,
   }).result as ProductAggregate;
 }
@@ -103,14 +107,14 @@ describe('MongooseProductRepository', () => {
 
   describe('countByCategoryId', () => {
     it('should count products by category id', async () => {
-      const p1 = buildProduct('P1', 'cat-a');
-      const p2 = buildProduct('P2', 'cat-a');
-      const p3 = buildProduct('P3', 'cat-b');
+      const p1 = buildProduct('P1', CATEGORY_A_ID);
+      const p2 = buildProduct('P2', CATEGORY_A_ID);
+      const p3 = buildProduct('P3', CATEGORY_B_ID);
       await repository.save(p1);
       await repository.save(p2);
       await repository.save(p3);
 
-      const catAId = IdValueObject.init({ value: 'cat-a' }).result as IdValueObject;
+      const catAId = IdValueObject.init({ value: CATEGORY_A_ID }).result as IdValueObject;
       const count = await repository.countByCategoryId(catAId);
       expect(count).toBe(2);
     });
@@ -123,7 +127,7 @@ describe('MongooseProductRepository', () => {
       await repository.save(p1);
       await repository.save(p2);
 
-      const result = await repository.findForSellers({ page: 1, size: 10 });
+      const result = await repository.findForSellers({ sellerId: DEFAULT_SELLER_ID, page: 1, size: 10, sortBy: 'name', order: 'asc' });
       expect(result.total).toBe(2);
       expect(result.products).toHaveLength(2);
     });
@@ -134,7 +138,7 @@ describe('MongooseProductRepository', () => {
       await repository.save(p1);
       await repository.save(p2);
 
-      const result = await repository.findForSellers({ page: 1, size: 1 });
+      const result = await repository.findForSellers({ sellerId: DEFAULT_SELLER_ID, page: 1, size: 1, sortBy: 'name', order: 'asc' });
       expect(result.products).toHaveLength(1);
     });
 
@@ -142,7 +146,7 @@ describe('MongooseProductRepository', () => {
       const p1 = buildProduct('Alpha');
       await repository.save(p1);
 
-      const result = await repository.findForSellers({ page: 999, size: 10 });
+      const result = await repository.findForSellers({ sellerId: DEFAULT_SELLER_ID, page: 999, size: 10, sortBy: 'name', order: 'asc' });
       expect(result.products).toHaveLength(1);
     });
   });
@@ -152,7 +156,7 @@ describe('MongooseProductRepository', () => {
       const p1 = buildProduct('Customer Product');
       await repository.save(p1);
 
-      const result = await repository.findForCustomers({ page: 1, size: 10 });
+      const result = await repository.findForCustomers({ page: 1, size: 10, sortBy: 'name', order: 'asc' });
       expect(result.total).toBe(1);
       expect(result.products[0]).toHaveProperty('id');
       expect(result.products[0]).not.toHaveProperty('inventory_ammount');

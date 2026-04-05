@@ -28,6 +28,7 @@ function makeProductRepo(overrides: Partial<ProductRepository> = {}): ProductRep
   const product = buildProduct();
   return {
     findById: jest.fn().mockResolvedValue(product),
+    findIdsBySellerId: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
     findForSellers: jest.fn().mockResolvedValue({ products: [], total: 0 }),

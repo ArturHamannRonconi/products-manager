@@ -20,6 +20,7 @@ function makeOrderRepo(overrides: Partial<OrderRepository> = {}): OrderRepositor
     save: jest.fn().mockResolvedValue(undefined),
     findById: jest.fn().mockResolvedValue(null),
     findByCustomerId: jest.fn().mockResolvedValue({ orders: [], total: 0 }),
+    findBySellerProductIds: jest.fn().mockResolvedValue({ orders: [], total: 0 }),
     ...overrides,
   };
 }
@@ -27,6 +28,7 @@ function makeOrderRepo(overrides: Partial<OrderRepository> = {}): OrderRepositor
 function makeProductRepo(overrides: Partial<ProductRepository> = {}): ProductRepository {
   return {
     findById: jest.fn().mockResolvedValue(null),
+    findIdsBySellerId: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
     findForSellers: jest.fn().mockResolvedValue({ products: [], total: 0 }),

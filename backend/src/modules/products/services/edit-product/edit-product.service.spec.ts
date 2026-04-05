@@ -12,9 +12,13 @@ import { CategoryAggregate } from '../../../categories/domain/category.aggregate
 import { CategoryNameValueObject } from '../../../categories/domain/value-objects/category-name/category-name.value-object';
 import { DateValueObject, IdValueObject } from 'ddd-tool-kit';
 
-function buildProduct(categoryId = 'cat-1'): ProductAggregate {
+const PRODUCT_ID   = 'product-id------';  // 16 chars
+const CATEGORY_ID  = 'category-id-----';  // 16 chars
+const CATEGORY2_ID = 'category-id2----';  // 16 chars
+
+function buildProduct(categoryId = CATEGORY_ID): ProductAggregate {
   return ProductAggregate.init({
-    id: IdValueObject.init({ value: 'product-1' }).result as IdValueObject,
+    id: IdValueObject.init({ value: PRODUCT_ID }).result as IdValueObject,
     createdAt: DateValueObject.getDefault(),
     updatedAt: DateValueObject.getDefault(),
     name: ProductNameValueObject.init({ value: 'Test Product' }).result as ProductNameValueObject,
@@ -37,14 +41,15 @@ function buildCategory(id: string, name: string): CategoryAggregate {
 }
 
 const sellerView = {
-  id: 'product-1', name: 'Test Product', description: 'Original description.', image_url: null,
+  id: PRODUCT_ID, name: 'Test Product', description: 'Original description.', image_url: null,
   price: 10, seller_name: 'Seller', seller_id: 'seller-1',
-  category_name: 'Electronics', category_id: 'cat-1', inventory_ammount: 5,
+  category_name: 'Electronics', category_id: CATEGORY_ID, inventory_ammount: 5,
 };
 
 function makeProductRepo(product: ProductAggregate, overrides: Partial<ProductRepository> = {}): ProductRepository {
   return {
     findById: jest.fn().mockResolvedValue(product),
+    findIdsBySellerId: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
     findForSellers: jest.fn().mockResolvedValue({ products: [sellerView], total: 1 }),
@@ -80,7 +85,7 @@ describe('EditProductService', () => {
     const service = new EditProductService(productRepo, makeCategoryRepo(), makeSellerRepo());
 
     const result = await service.execute({
-      productId: 'product-1',
+      productId: PRODUCT_ID,
       name: 'New Name',
     });
 
@@ -89,13 +94,13 @@ describe('EditProductService', () => {
   });
 
   it('should create new category when editing to a non-existent category', async () => {
-    const product = buildProduct('cat-1');
+    const product = buildProduct(CATEGORY_ID);
     const productRepo = makeProductRepo(product, { countByCategoryId: jest.fn().mockResolvedValue(0) });
     const categoryRepo = makeCategoryRepo();
     const service = new EditProductService(productRepo, categoryRepo, makeSellerRepo());
 
     const result = await service.execute({
-      productId: 'product-1',
+      productId: PRODUCT_ID,
       category: 'New Category',
     });
 
@@ -105,14 +110,14 @@ describe('EditProductService', () => {
   });
 
   it('should reuse existing category', async () => {
-    const product = buildProduct('cat-1');
-    const existingCat = buildCategory('cat-2', 'books');
+    const product = buildProduct(CATEGORY_ID);
+    const existingCat = buildCategory(CATEGORY2_ID, 'books');
     const productRepo = makeProductRepo(product, { countByCategoryId: jest.fn().mockResolvedValue(1) });
     const categoryRepo = makeCategoryRepo({ findByName: jest.fn().mockResolvedValue(existingCat) });
     const service = new EditProductService(productRepo, categoryRepo, makeSellerRepo());
 
     const result = await service.execute({
-      productId: 'product-1',
+      productId: PRODUCT_ID,
       category: 'Books',
     });
 
@@ -121,13 +126,13 @@ describe('EditProductService', () => {
   });
 
   it('should delete orphan category after edit', async () => {
-    const product = buildProduct('cat-old');
+    const product = buildProduct(CATEGORY_ID);
     const productRepo = makeProductRepo(product, { countByCategoryId: jest.fn().mockResolvedValue(0) });
     const categoryRepo = makeCategoryRepo();
     const service = new EditProductService(productRepo, categoryRepo, makeSellerRepo());
 
     const result = await service.execute({
-      productId: 'product-1',
+      productId: PRODUCT_ID,
       category: 'New Category',
     });
 

@@ -1,46 +1,44 @@
 import { JwtService } from '@nestjs/jwt';
 import { CustomerRefreshTokenService } from './customer-refresh-token.service';
 import { CustomerRepository } from '../../repositories/customers/customer-repository.interface';
-import { CustomerAggregate } from '../../domain/customer.aggregate-root';
 import { DateValueObject, IdValueObject } from 'ddd-tool-kit';
-import { NameValueObject } from '../../domain/value-objects/name/name.value-object';
-import { EmailValueObject } from '../../domain/value-objects/email/email.value-object';
-import { PasswordValueObject } from '../../../../shared/value-objects/password/password.value-object';
-import { RefreshTokenEntity } from '../../domain/entities/refresh-token/refresh-token.entity';
 import * as bcryptjs from 'bcryptjs';
 
-function buildCustomerWithToken() {
-  const expiresAt = DateValueObject.getDefault();
-  expiresAt.addDays(30);
+function makeExpiredAt(daysFromNow: number) {
+  const d = DateValueObject.getDefault();
+  d.addDays(daysFromNow);
+  return d;
+}
 
-  const rawTokenId = IdValueObject.getDefault();
-  const tokenHash = bcryptjs.hashSync(rawTokenId.value, bcryptjs.genSaltSync());
+function buildMockCustomerWithToken(expired = false) {
+  const rawTokenId = IdValueObject.getDefault().value;
+  const tokenHash = bcryptjs.hashSync(rawTokenId, bcryptjs.genSaltSync());
 
-  const token = RefreshTokenEntity.init({
-    id: IdValueObject.init({ value: tokenHash }).result as IdValueObject,
-    expiresAt,
-    createdAt: DateValueObject.getDefault(),
-    updatedAt: DateValueObject.getDefault(),
-  }).result as RefreshTokenEntity;
+  const mockToken = {
+    id: { value: tokenHash },
+    expiresAt: makeExpiredAt(expired ? -1 : 30),
+    get secondsUntilExpiration() {
+      const diff = Math.floor((this.expiresAt.value.getTime() - Date.now()) / 1000);
+      return Math.max(diff, 0);
+    },
+    renew: jest.fn(function (this: any) {
+      this.id = { value: IdValueObject.getDefault().value };
+    }),
+  };
 
-  const customer = CustomerAggregate.init({
-    id: IdValueObject.getDefault(),
-    createdAt: DateValueObject.getDefault(),
-    updatedAt: DateValueObject.getDefault(),
-    name: NameValueObject.init({ value: 'John' }).result as NameValueObject,
-    email: EmailValueObject.init({ value: 'john@example.com' }).result as EmailValueObject,
-    password: PasswordValueObject.init({ value: 'password123' }).result as PasswordValueObject,
-    refreshTokens: [token],
-  }).result as CustomerAggregate;
+  const mockCustomer = {
+    id: { value: IdValueObject.getDefault().value },
+    refreshTokens: [mockToken],
+  };
 
-  return { customer, rawTokenId: rawTokenId.value, tokenHash };
+  return { customer: mockCustomer as any, rawTokenId };
 }
 
 const mockJwt = { sign: jest.fn().mockReturnValue('new.jwt.token') } as unknown as JwtService;
 
 describe('CustomerRefreshTokenService', () => {
   it('should refresh token successfully', async () => {
-    const { customer, rawTokenId } = buildCustomerWithToken();
+    const { customer, rawTokenId } = buildMockCustomerWithToken();
     const repo: CustomerRepository = {
       findById: jest.fn().mockResolvedValue(null),
       findByEmail: jest.fn().mockResolvedValue(null),
@@ -73,29 +71,7 @@ describe('CustomerRefreshTokenService', () => {
   });
 
   it('should fail when token is expired', async () => {
-    const expiredAt = DateValueObject.getDefault();
-    expiredAt.addDays(-1);
-
-    const rawTokenId = IdValueObject.getDefault();
-    const tokenHash = bcryptjs.hashSync(rawTokenId.value, bcryptjs.genSaltSync());
-
-    const token = RefreshTokenEntity.init({
-      id: IdValueObject.init({ value: tokenHash }).result as IdValueObject,
-      expiresAt: expiredAt,
-      createdAt: DateValueObject.getDefault(),
-      updatedAt: DateValueObject.getDefault(),
-    }).result as RefreshTokenEntity;
-
-    const customer = CustomerAggregate.init({
-      id: IdValueObject.getDefault(),
-      createdAt: DateValueObject.getDefault(),
-      updatedAt: DateValueObject.getDefault(),
-      name: NameValueObject.init({ value: 'John' }).result as NameValueObject,
-      email: EmailValueObject.init({ value: 'john@example.com' }).result as EmailValueObject,
-      password: PasswordValueObject.init({ value: 'password123' }).result as PasswordValueObject,
-      refreshTokens: [token],
-    }).result as CustomerAggregate;
-
+    const { customer, rawTokenId } = buildMockCustomerWithToken(true);
     const repo: CustomerRepository = {
       findById: jest.fn().mockResolvedValue(null),
       findByEmail: jest.fn().mockResolvedValue(null),
@@ -104,7 +80,7 @@ describe('CustomerRefreshTokenService', () => {
     };
     const service = new CustomerRefreshTokenService(repo, mockJwt);
 
-    const result = await service.execute({ refreshToken: rawTokenId.value });
+    const result = await service.execute({ refreshToken: rawTokenId });
 
     expect(result.isFailure).toBe(true);
     const error = result.result as { statusCode: number };

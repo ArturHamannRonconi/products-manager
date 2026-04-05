@@ -9,13 +9,15 @@ import { OrderStatusValueObject } from '../../domain/value-objects/order-status/
 import { OrderItemEntity } from '../../domain/entities/order-item/order-item.entity';
 import { AmountValueObject } from '../../domain/value-objects/amount/amount.value-object';
 
-const SELLER_ID = 'seller-abc';
+const SELLER_ID       = 'sellerABCDEFGHIJ';  // exactly 16 chars
+const OTHER_SELLER_ID = 'sellerOTHER12345';  // exactly 16 chars
 
 function makeOrderRepo(overrides: Partial<OrderRepository> = {}): OrderRepository {
   return {
     save: jest.fn().mockResolvedValue(undefined),
     findById: jest.fn().mockResolvedValue(null),
     findByCustomerId: jest.fn().mockResolvedValue({ orders: [], total: 0 }),
+    findBySellerProductIds: jest.fn().mockResolvedValue({ orders: [], total: 0 }),
     ...overrides,
   };
 }
@@ -34,6 +36,7 @@ function makeProductRepoWithSeller(sellerId = SELLER_ID): ProductRepository {
   };
   return {
     findById: jest.fn().mockResolvedValue(fakeProduct),
+    findIdsBySellerId: jest.fn().mockResolvedValue([]),
     save: jest.fn().mockResolvedValue(undefined),
     delete: jest.fn().mockResolvedValue(undefined),
     findForSellers: jest.fn().mockResolvedValue({ products: [], total: 0 }),
@@ -43,7 +46,7 @@ function makeProductRepoWithSeller(sellerId = SELLER_ID): ProductRepository {
 }
 
 function makeProductRepoWithNoMatch(): ProductRepository {
-  return makeProductRepoWithSeller('other-seller');
+  return makeProductRepoWithSeller(OTHER_SELLER_ID);
 }
 
 function makeSellerRepo(overrides: Partial<SellerRepository> = {}): SellerRepository {

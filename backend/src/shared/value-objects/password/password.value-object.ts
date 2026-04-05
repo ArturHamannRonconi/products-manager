@@ -7,11 +7,14 @@ const INVALID_PASSWORD = {
 };
 
 class PasswordValueObject extends ValueObject<IBaseDomainValueObject<string>> {
+  private rawValue!: string;
+
   private constructor(props: IBaseDomainValueObject<string>) {
     super(props);
   }
 
   protected sanitizeProps(): void {
+    this.rawValue = this.props.value;
     if (this.props.value.startsWith('$2')) return;
     this.props.value = bcryptjs.hashSync(
       this.props.value,
@@ -20,7 +23,8 @@ class PasswordValueObject extends ValueObject<IBaseDomainValueObject<string>> {
   }
 
   protected isValidProps(): boolean {
-    return this.props.value.length >= 8;
+    if (this.rawValue.startsWith('$2')) return true;
+    return this.rawValue.length >= 8;
   }
 
   comparePassword(plain: string): boolean {

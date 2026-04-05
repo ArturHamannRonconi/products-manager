@@ -12,7 +12,10 @@ import { OrderStatusValueObject } from '../../../../domain/value-objects/order-s
 import { OrderItemEntity } from '../../../../domain/entities/order-item/order-item.entity';
 import { AmountValueObject } from '../../../../domain/value-objects/amount/amount.value-object';
 
-function buildOrder(customerId = 'customer-1'): OrderAggregate {
+const CUSTOMER_A_ID = 'customerAAAAAAAA';  // exactly 16 chars
+const CUSTOMER_B_ID = 'customerBBBBBBBB';  // exactly 16 chars
+
+function buildOrder(customerId = CUSTOMER_A_ID): OrderAggregate {
   const item = OrderItemEntity.init({
     id: IdValueObject.getDefault(),
     createdAt: DateValueObject.getDefault(),
@@ -99,35 +102,35 @@ describe('MongooseOrderRepository', () => {
 
   describe('findByCustomerId', () => {
     it('should return orders for a customer', async () => {
-      const o1 = buildOrder('customer-a');
-      const o2 = buildOrder('customer-a');
-      const o3 = buildOrder('customer-b');
+      const o1 = buildOrder(CUSTOMER_A_ID);
+      const o2 = buildOrder(CUSTOMER_A_ID);
+      const o3 = buildOrder(CUSTOMER_B_ID);
       await repository.save(o1);
       await repository.save(o2);
       await repository.save(o3);
 
-      const customerId = IdValueObject.init({ value: 'customer-a' }).result as IdValueObject;
+      const customerId = IdValueObject.init({ value: CUSTOMER_A_ID }).result as IdValueObject;
       const result = await repository.findByCustomerId(customerId, { page: 1, size: 10 });
       expect(result.total).toBe(2);
       expect(result.orders).toHaveLength(2);
     });
 
     it('should paginate correctly', async () => {
-      const o1 = buildOrder('customer-a');
-      const o2 = buildOrder('customer-a');
+      const o1 = buildOrder(CUSTOMER_A_ID);
+      const o2 = buildOrder(CUSTOMER_A_ID);
       await repository.save(o1);
       await repository.save(o2);
 
-      const customerId = IdValueObject.init({ value: 'customer-a' }).result as IdValueObject;
+      const customerId = IdValueObject.init({ value: CUSTOMER_A_ID }).result as IdValueObject;
       const result = await repository.findByCustomerId(customerId, { page: 1, size: 1 });
       expect(result.orders).toHaveLength(1);
     });
 
     it('should cap page to last page when page exceeds total', async () => {
-      const o1 = buildOrder('customer-a');
+      const o1 = buildOrder(CUSTOMER_A_ID);
       await repository.save(o1);
 
-      const customerId = IdValueObject.init({ value: 'customer-a' }).result as IdValueObject;
+      const customerId = IdValueObject.init({ value: CUSTOMER_A_ID }).result as IdValueObject;
       const result = await repository.findByCustomerId(customerId, { page: 999, size: 10 });
       expect(result.orders).toHaveLength(1);
     });
