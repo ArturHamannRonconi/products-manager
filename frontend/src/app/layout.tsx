@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Products Manager',
   description: 'Product and order management platform',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
