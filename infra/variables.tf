@@ -96,13 +96,11 @@ variable "frontend_memory" {
 variable "backend_desired_count" {
   description = "Desired number of backend tasks"
   type        = number
-  default     = 1
 }
 
 variable "frontend_desired_count" {
   description = "Desired number of frontend tasks"
   type        = number
-  default     = 1
 }
 
 # --- Domain ---
