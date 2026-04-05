@@ -38,16 +38,14 @@ variable "ecr_image_url" {
   type        = string
 }
 
-variable "mongodb_username" {
-  description = "MongoDB root username"
+variable "mongodb_username_param_arn" {
+  description = "SSM Parameter ARN for the MongoDB root username"
   type        = string
-  default     = "admin"
 }
 
-variable "mongodb_password" {
-  description = "MongoDB root password"
+variable "mongodb_password_param_arn" {
+  description = "SSM Parameter ARN for the MongoDB root password"
   type        = string
-  sensitive   = true
 }
 
 variable "cpu" {

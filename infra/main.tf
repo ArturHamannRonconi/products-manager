@@ -56,6 +56,16 @@ module "parameters" {
 
   parameters = [
     {
+      name  = "${local.ssm_prefix}/MONGO_INITDB_ROOT_USERNAME"
+      value = var.mongodb_username
+      type  = "SecureString"
+    },
+    {
+      name  = "${local.ssm_prefix}/MONGO_INITDB_ROOT_PASSWORD"
+      value = var.mongodb_password
+      type  = "SecureString"
+    },
+    {
       name  = "${local.ssm_prefix}/PORT"
       value = local.backend_port
       type  = "SecureString"
@@ -98,6 +108,13 @@ module "ecs_cluster" {
   public_subnet_ids  = module.networking.public_subnet_ids
   private_subnet_ids = module.networking.private_subnet_ids
   ecr_repositories   = ["backend", "frontend", "mongodb"]
+
+  execution_role_extra_policies = {
+    ssm-mongodb-secrets = templatefile(
+      "${path.module}/policies/ssm-read.json",
+      { ssm_parameter_arn_prefix = "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter${local.ssm_prefix}" }
+    )
+  }
 
   services = [
     {
@@ -164,9 +181,9 @@ module "mongodb" {
 
   allowed_security_group_ids = [module.ecs_cluster.service_security_group_ids["backend"]]
 
-  ecr_image_url    = "${module.ecs_cluster.ecr_repository_urls["mongodb"]}:latest"
-  mongodb_username = var.mongodb_username
-  mongodb_password = var.mongodb_password
-  cpu              = var.mongodb_cpu
-  memory           = var.mongodb_memory
+  ecr_image_url              = "${module.ecs_cluster.ecr_repository_urls["mongodb"]}:latest"
+  mongodb_username_param_arn = module.parameters.parameter_arns["${local.ssm_prefix}/MONGO_INITDB_ROOT_USERNAME"]
+  mongodb_password_param_arn = module.parameters.parameter_arns["${local.ssm_prefix}/MONGO_INITDB_ROOT_PASSWORD"]
+  cpu                        = var.mongodb_cpu
+  memory                     = var.mongodb_memory
 }

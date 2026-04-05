@@ -157,9 +157,9 @@ resource "aws_ecs_task_definition" "mongodb" {
       protocol      = "tcp"
     }]
 
-    environment = [
-      { name = "MONGO_INITDB_ROOT_USERNAME", value = var.mongodb_username },
-      { name = "MONGO_INITDB_ROOT_PASSWORD", value = var.mongodb_password }
+    secrets = [
+      { name = "MONGO_INITDB_ROOT_USERNAME", valueFrom = var.mongodb_username_param_arn },
+      { name = "MONGO_INITDB_ROOT_PASSWORD", valueFrom = var.mongodb_password_param_arn }
     ]
 
     mountPoints = [{
