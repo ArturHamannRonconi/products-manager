@@ -48,11 +48,6 @@ module "uploads_bucket" {
     allowed_origins = ["*"]
     allowed_methods = ["GET", "PUT"]
   }]
-
-  restrict_to_vpc_endpoint = true
-  create_vpc_endpoint      = true
-  vpc_id                   = module.networking.vpc_id
-  route_table_ids          = [module.networking.private_route_table_id]
 }
 
 
