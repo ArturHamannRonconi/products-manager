@@ -161,8 +161,12 @@ module "ecs_cluster" {
 
       environment = [
         {
-          name = "NODE_ENV",
+          name  = "NODE_ENV",
           value = "prod"
+        },
+        {
+          name  = "SSM_PREFIX",
+          value = local.ssm_prefix
         },
       ]
     }

@@ -16,8 +16,9 @@ export class ParameterStoreEnvProvider implements IEnvProvider {
   }
 
   async get(key: string): Promise<string> {
+    const prefix = process.env.SSM_PREFIX ?? '';
     const command = new GetParameterCommand({
-      Name: `/${key}`,
+      Name: `${prefix}/${key}`,
       WithDecryption: true,
     });
     const response = await this.client.send(command);
