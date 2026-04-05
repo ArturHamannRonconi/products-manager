@@ -181,15 +181,6 @@ resource "aws_route53_record" "service_cert_validation" {
   allow_overwrite = true
 }
 
-# --- Certificate Validation ---
-
-resource "aws_acm_certificate_validation" "service" {
-  for_each = local.services_with_subdomain
-
-  certificate_arn         = aws_acm_certificate.service[each.key].arn
-  validation_record_fqdns = [aws_route53_record.service_cert_validation[each.key].fqdn]
-}
-
 # --- Route 53 A Records for subdomains ---
 
 resource "aws_route53_record" "service_subdomain" {
@@ -231,7 +222,7 @@ resource "aws_lb_listener" "https" {
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = aws_acm_certificate_validation.service[local.default_cert_service_key].certificate_arn
+  certificate_arn   = aws_acm_certificate.service[local.default_cert_service_key].arn
 
   default_action {
     type = "fixed-response"
@@ -250,7 +241,7 @@ resource "aws_lb_listener_certificate" "service" {
   for_each = local.additional_cert_services
 
   listener_arn    = aws_lb_listener.https.arn
-  certificate_arn = aws_acm_certificate_validation.service[each.key].certificate_arn
+  certificate_arn = aws_acm_certificate.service[each.key].arn
 }
 
 # --- ECS Task Execution Role ---
