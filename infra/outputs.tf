@@ -43,11 +43,6 @@ output "s3_bucket_name" {
   value       = module.uploads_bucket.bucket_name
 }
 
-output "route53_nameservers" {
-  description = "Route 53 nameservers — configure these at your domain registrar"
-  value       = module.ecs_cluster.route53_nameservers
-}
-
 output "domain_name" {
   description = "Base domain name"
   value       = var.domain_name

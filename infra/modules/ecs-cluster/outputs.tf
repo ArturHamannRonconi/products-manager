@@ -40,17 +40,12 @@ output "execution_role_name" {
 
 output "route53_zone_id" {
   description = "Route 53 hosted zone ID"
-  value       = aws_route53_zone.main.zone_id
-}
-
-output "route53_nameservers" {
-  description = "Route 53 nameservers"
-  value       = aws_route53_zone.main.name_servers
+  value       = data.aws_route53_zone.main.zone_id
 }
 
 output "certificate_arns" {
   description = "Map of service key to ACM certificate ARN"
-  value       = { for k, v in aws_acm_certificate.service : k => v.arn }
+  value       = { for k, v in data.aws_acm_certificate.service : k => v.arn }
 }
 
 # --- Per-service outputs ---

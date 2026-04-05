@@ -103,12 +103,11 @@ resource "aws_lb" "main" {
   tags = { Name = "${var.name_prefix}-alb" }
 }
 
-# --- Route 53 Hosted Zone ---
+# --- Route 53 Hosted Zone (pre-existing, managed outside Terraform) ---
 
-resource "aws_route53_zone" "main" {
-  name = var.domain_name
-
-  tags = { Name = "${var.name_prefix}-zone" }
+data "aws_route53_zone" "main" {
+  name         = var.domain_name
+  private_zone = false
 }
 
 # ===========================================================================
@@ -154,31 +153,13 @@ locals {
 #  Per-service subdomain: ACM certificates, DNS records, listener certs
 # ===========================================================================
 
-# --- ACM Certificate per subdomain service ---
+# --- ACM Certificates (pre-existing, managed outside Terraform) ---
 
-resource "aws_acm_certificate" "service" {
+data "aws_acm_certificate" "service" {
   for_each = local.services_with_subdomain
 
-  domain_name       = "${each.value.sub_domain_name}.${var.domain_name}"
-  validation_method = "DNS"
-
-  tags = { Name = "${var.name_prefix}-${each.key}-cert" }
-
-  lifecycle { create_before_destroy = true }
-}
-
-# --- DNS Validation Records ---
-
-resource "aws_route53_record" "service_cert_validation" {
-  for_each = local.services_with_subdomain
-
-  zone_id = aws_route53_zone.main.zone_id
-  name    = tolist(aws_acm_certificate.service[each.key].domain_validation_options)[0].resource_record_name
-  type    = tolist(aws_acm_certificate.service[each.key].domain_validation_options)[0].resource_record_type
-  ttl     = 60
-  records = [tolist(aws_acm_certificate.service[each.key].domain_validation_options)[0].resource_record_value]
-
-  allow_overwrite = true
+  domain   = "${each.value.sub_domain_name}.${var.domain_name}"
+  statuses = ["ISSUED"]
 }
 
 # --- Route 53 A Records for subdomains ---
@@ -186,7 +167,7 @@ resource "aws_route53_record" "service_cert_validation" {
 resource "aws_route53_record" "service_subdomain" {
   for_each = local.services_with_subdomain
 
-  zone_id = aws_route53_zone.main.zone_id
+  zone_id = data.aws_route53_zone.main.zone_id
   name    = "${each.value.sub_domain_name}.${var.domain_name}"
   type    = "A"
 
@@ -222,7 +203,7 @@ resource "aws_lb_listener" "https" {
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = aws_acm_certificate.service[local.default_cert_service_key].arn
+  certificate_arn   = data.aws_acm_certificate.service[local.default_cert_service_key].arn
 
   default_action {
     type = "fixed-response"
@@ -241,7 +222,7 @@ resource "aws_lb_listener_certificate" "service" {
   for_each = local.additional_cert_services
 
   listener_arn    = aws_lb_listener.https.arn
-  certificate_arn = aws_acm_certificate.service[each.key].arn
+  certificate_arn = data.aws_acm_certificate.service[each.key].arn
 }
 
 # --- ECS Task Execution Role ---
