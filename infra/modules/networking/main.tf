@@ -107,3 +107,13 @@ resource "aws_vpc_endpoint" "interface" {
 
   tags = { Name = "${var.name_prefix}-vpce-${replace(each.value, ".", "-")}" }
 }
+
+# S3 Gateway Endpoint — required for ECR image layer downloads from private subnets
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = [aws_route_table.private.id]
+
+  tags = { Name = "${var.name_prefix}-vpce-s3" }
+}
