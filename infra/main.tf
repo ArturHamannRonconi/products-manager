@@ -40,7 +40,7 @@ module "uploads_bucket" {
   bucket_name          = "${local.name_prefix}-uploads"
   region               = var.aws_region
   force_destroy        = true
-  enable_public_access = false
+  enable_public_access = true
 
   cors_rules = [{
     max_age_seconds = 3600

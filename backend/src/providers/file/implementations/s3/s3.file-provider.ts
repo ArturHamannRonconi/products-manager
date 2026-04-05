@@ -27,7 +27,6 @@ class S3FileProvider implements IFileProvider {
         Key: filename,
         Body: buffer,
         ContentType: mimetype,
-        ACL: 'public-read',
       }),
     );
     return { url: `https://${this.bucketName}.s3.${this.region}.amazonaws.com/${filename}` };

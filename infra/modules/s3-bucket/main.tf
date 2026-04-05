@@ -6,21 +6,38 @@ resource "aws_s3_bucket" "this" {
 }
 
 resource "aws_s3_bucket_ownership_controls" "this" {
-  count  = var.enable_public_access ? 1 : 0
   bucket = aws_s3_bucket.this.id
 
   rule {
-    object_ownership = "BucketOwnerPreferred"
+    object_ownership = "BucketOwnerEnforced"
   }
 }
 
 resource "aws_s3_bucket_public_access_block" "this" {
   bucket = aws_s3_bucket.this.id
 
-  block_public_acls       = !var.enable_public_access
+  block_public_acls       = true
+  ignore_public_acls      = true
   block_public_policy     = !var.enable_public_access
-  ignore_public_acls      = !var.enable_public_access
   restrict_public_buckets = !var.enable_public_access
+}
+
+resource "aws_s3_bucket_policy" "public_read" {
+  count  = var.enable_public_access && !var.restrict_to_vpc_endpoint ? 1 : 0
+  bucket = aws_s3_bucket.this.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "PublicReadGetObject"
+      Effect    = "Allow"
+      Principal = "*"
+      Action    = "s3:GetObject"
+      Resource  = "${aws_s3_bucket.this.arn}/*"
+    }]
+  })
+
+  depends_on = [aws_s3_bucket_public_access_block.this]
 }
 
 resource "aws_s3_bucket_policy" "vpc_only" {
