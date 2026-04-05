@@ -11,7 +11,7 @@ locals {
   frontend_url  = "https://app.${var.domain_name}"
   api_url       = "https://api.${var.domain_name}"
   ssm_prefix    = "/${var.project_name}/${var.environment}"
-  mongodb_uri   = "mongodb://${var.mongodb_username}:${var.mongodb_password}@${module.mongodb.dns_hostname}:27017/${var.project_name}?authSource=admin"
+  mongodb_uri   = "mongodb://${urlencode(var.mongodb_username)}:${urlencode(var.mongodb_password)}@${module.mongodb.dns_hostname}:27017/${var.project_name}?authSource=admin"
 }
 
 
