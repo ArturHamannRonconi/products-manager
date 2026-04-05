@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { getModelToken } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { EnvProviderModule } from '../../providers/env/env-provider.module';
+import { ENV_PROVIDER, IEnvProvider } from '../../providers/env/env-provider.interface';
 
 import { SellerSchema, ISellerSchema } from './repositories/sellers/schema/seller.schema';
 import { RefreshTokenMapper } from './repositories/sellers/refresh-token.mapper';
@@ -36,18 +35,27 @@ import { ChangeSellerPasswordController } from './controllers/change-seller-pass
 
 @Module({
   imports: [
+    EnvProviderModule,
     MongooseModule.forFeature([{ name: 'Seller', schema: SellerSchema }]),
     JwtModule.registerAsync({
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SELLER_SECRET'),
+      imports: [EnvProviderModule],
+      useFactory: async (envProvider: IEnvProvider) => ({
+        secret: await envProvider.get('JWT_SELLER_SECRET'),
         signOptions: { expiresIn: '15m' },
       }),
-      inject: [ConfigService],
+      inject: [ENV_PROVIDER],
     }),
     PassportModule,
   ],
   providers: [
-    SellerJwtStrategy,
+    {
+      provide: SellerJwtStrategy,
+      useFactory: async (envProvider: IEnvProvider) => {
+        const secret = await envProvider.get('JWT_SELLER_SECRET');
+        return new SellerJwtStrategy(secret!);
+      },
+      inject: [ENV_PROVIDER],
+    },
     SellerJwtGuard,
     RefreshTokenMapper,
     SellerMapper,

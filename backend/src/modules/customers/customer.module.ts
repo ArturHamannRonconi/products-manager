@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { getModelToken } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { EnvProviderModule } from '../../providers/env/env-provider.module';
+import { ENV_PROVIDER, IEnvProvider } from '../../providers/env/env-provider.interface';
 
 import { CustomerSchema, ICustomerSchema } from './repositories/customers/schema/customer.schema';
 import { RefreshTokenMapper } from './repositories/customers/refresh-token.mapper';
@@ -34,18 +33,27 @@ import { ChangeCustomerPasswordController } from './controllers/change-customer-
 
 @Module({
   imports: [
+    EnvProviderModule,
     MongooseModule.forFeature([{ name: 'Customer', schema: CustomerSchema }]),
     JwtModule.registerAsync({
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_CUSTOMER_SECRET'),
+      imports: [EnvProviderModule],
+      useFactory: async (envProvider: IEnvProvider) => ({
+        secret: await envProvider.get('JWT_CUSTOMER_SECRET'),
         signOptions: { expiresIn: '15m' },
       }),
-      inject: [ConfigService],
+      inject: [ENV_PROVIDER],
     }),
     PassportModule,
   ],
   providers: [
-    CustomerJwtStrategy,
+    {
+      provide: CustomerJwtStrategy,
+      useFactory: async (envProvider: IEnvProvider) => {
+        const secret = await envProvider.get('JWT_CUSTOMER_SECRET');
+        return new CustomerJwtStrategy(secret!);
+      },
+      inject: [ENV_PROVIDER],
+    },
     CustomerJwtGuard,
     RefreshTokenMapper,
     CustomerMapper,

@@ -23,10 +23,20 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 # Check .env exists
-if [ ! -f ".env" ]; then
-  echo -e "${RED}Error: .env file not found. Create it based on the README before starting.${NC}"
+if [ ! -f "backend.env" ]; then
+  echo -e "${RED}Error: backend.env file not found. Create it based on the README before starting.${NC}"
   exit 1
 fi
+
+if [ ! -f "frontend.env" ]; then
+  echo -e "${RED}Error: frontend.env file not found. Create it based on the README before starting.${NC}"
+  exit 1
+fi
+
+echo -e "${YELLOW}Loading frontend build args...${NC}"
+set -a
+source frontend.env
+set +a
 
 echo -e "${YELLOW}Building images and starting services...${NC}"
 echo ""

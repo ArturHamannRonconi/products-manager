@@ -2,11 +2,15 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 import { IFileProvider } from '../../file.interface';
 
 class S3FileProvider implements IFileProvider {
-  constructor(
-    private readonly s3Client: S3Client,
-    private readonly bucketName: string,
-    private readonly region: string,
-  ) {}
+  private readonly region = "us-east-1";
+  private readonly client: S3Client;
+
+
+  constructor(private readonly bucketName: string) {
+    this.client = new S3Client({
+      region: this.region
+    });
+  }
 
   async upload({
     filename,
@@ -17,7 +21,7 @@ class S3FileProvider implements IFileProvider {
     buffer: Buffer;
     mimetype: string;
   }): Promise<{ url: string }> {
-    await this.s3Client.send(
+    await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucketName,
         Key: filename,
@@ -30,7 +34,7 @@ class S3FileProvider implements IFileProvider {
   }
 
   async delete(filename: string): Promise<void> {
-    await this.s3Client.send(
+    await this.client.send(
       new DeleteObjectCommand({ Bucket: this.bucketName, Key: filename }),
     );
   }

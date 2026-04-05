@@ -9,6 +9,11 @@ const nextConfig = {
         port: '3001',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.s3.us-east-1.amazonaws.com',
+        pathname: '/**',
+      },
     ],
   },
 };

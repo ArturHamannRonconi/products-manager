@@ -15,12 +15,12 @@ export class ParameterStoreEnvProvider implements IEnvProvider {
     });
   }
 
-  async get(key: string): Promise<string | undefined> {
+  async get(key: string): Promise<string> {
     const command = new GetParameterCommand({
       Name: `/${key}`,
       WithDecryption: true,
     });
     const response = await this.client.send(command);
-    return response.Parameter?.Value;
+    return response.Parameter?.Value as string;
   }
 }

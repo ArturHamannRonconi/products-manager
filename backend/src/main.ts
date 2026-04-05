@@ -5,13 +5,19 @@ import * as cookieParser from 'cookie-parser';
 import * as express from 'express';
 import { join } from 'path';
 import { AppModule } from './app.module';
+import { ENV_PROVIDER, IEnvProvider } from './providers/env/env-provider.interface';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const envProvider = app.get<IEnvProvider>(ENV_PROVIDER);
+
+  const port = Number(await envProvider.get('PORT'));
+  const frontendUrl = await envProvider.get('FRONTEND_URL');
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    origin: frontendUrl,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   });
 
   app.use(cookieParser());
@@ -34,7 +40,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3001);
+  await app.listen(port);
 }
 
 bootstrap();
