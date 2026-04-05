@@ -38,18 +38,11 @@ resource "aws_s3_bucket_policy" "vpc_only" {
         aws_s3_bucket.this.arn,
         "${aws_s3_bucket.this.arn}/*"
       ]
-      Condition = merge(
-        {
-          StringNotEquals = {
-            "aws:sourceVpce" = aws_vpc_endpoint.s3[0].id
-          }
-        },
-        length(var.terraform_executor_arns) > 0 ? {
-          ArnNotLike = {
-            "aws:PrincipalArn" = var.terraform_executor_arns
-          }
-        } : {}
-      )
+      Condition = {
+        StringNotEquals = {
+          "aws:sourceVpce" = aws_vpc_endpoint.s3[0].id
+        }
+      }
     }]
   })
 
