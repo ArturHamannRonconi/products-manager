@@ -97,7 +97,7 @@ module "ecs_cluster" {
   vpc_id             = module.networking.vpc_id
   public_subnet_ids  = module.networking.public_subnet_ids
   private_subnet_ids = module.networking.private_subnet_ids
-  ecr_repositories   = ["backend", "frontend"]
+  ecr_repositories   = ["backend", "frontend", "mongodb"]
 
   services = [
     {
@@ -164,6 +164,7 @@ module "mongodb" {
 
   allowed_security_group_ids = [module.ecs_cluster.service_security_group_ids["backend"]]
 
+  ecr_image_url    = "${module.ecs_cluster.ecr_repository_urls["mongodb"]}:latest"
   mongodb_username = var.mongodb_username
   mongodb_password = var.mongodb_password
   cpu              = var.mongodb_cpu

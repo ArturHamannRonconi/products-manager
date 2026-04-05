@@ -149,7 +149,7 @@ resource "aws_ecs_task_definition" "mongodb" {
 
   container_definitions = jsonencode([{
     name      = "mongodb"
-    image     = "mongo:7"
+    image     = var.ecr_image_url
     essential = true
 
     portMappings = [{
@@ -185,7 +185,7 @@ resource "aws_ecs_service" "mongodb" {
   name            = "${var.name_prefix}-mongodb"
   cluster         = var.cluster_id
   task_definition = aws_ecs_task_definition.mongodb.arn
-  desired_count   = 1
+  desired_count   = 0
   launch_type     = "FARGATE"
 
   platform_version = "1.4.0"

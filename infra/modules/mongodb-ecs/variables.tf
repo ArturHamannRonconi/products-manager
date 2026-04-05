@@ -33,6 +33,11 @@ variable "allowed_security_group_ids" {
   type        = list(string)
 }
 
+variable "ecr_image_url" {
+  description = "ECR image URL for the MongoDB container (e.g. 123456789.dkr.ecr.us-east-1.amazonaws.com/name-mongodb:latest)"
+  type        = string
+}
+
 variable "mongodb_username" {
   description = "MongoDB root username"
   type        = string
