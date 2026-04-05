@@ -47,7 +47,6 @@ variable "private_subnet_cidrs" {
 variable "mongodb_username" {
   description = "MongoDB root username"
   type        = string
-  default     = "admin"
 }
 
 variable "mongodb_password" {
